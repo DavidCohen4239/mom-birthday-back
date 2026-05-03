@@ -47,7 +47,7 @@ public class MainController {
         this.songRepository = songRepository;
     }
 
-    @PostMapping("/reset-db")
+    @GetMapping("/reset-db")
     public String resetDatabase(@RequestParam String password) {
         // בדיקת אבטחה בסיסית
         if (!ADMIN_PASSWORD.equals(password)) {
