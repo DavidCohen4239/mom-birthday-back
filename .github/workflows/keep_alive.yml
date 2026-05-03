@@ -1,0 +1,10 @@
+name: Keep Alive Render
+on:
+  schedule:
+    - cron: '*/13 * * * *' # רץ כל 10 דקות
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Render Site
+        run: curl -I https://mom-birthday-back.onrender.com/api/ping
