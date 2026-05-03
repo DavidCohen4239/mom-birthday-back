@@ -22,6 +22,8 @@ public class MainController {
     public final TasteGuessRepository tasteGuessRepository;
     public final SolutionRepository solutionRepository;
 
+    private final String ADMIN_PASSWORD = "Dmr31301356";
+
     @PostConstruct
     public void init() {
         LocalDateTime now = LocalDateTime.now().minusMinutes(7);
@@ -43,6 +45,41 @@ public class MainController {
         this.tasteGuessRepository = tasteGuessRepository;
         this.solutionRepository = solutionRepository;
         this.songRepository = songRepository;
+    }
+
+    @PostMapping("/reset-db")
+    public String resetDatabase(@RequestParam String password) {
+        // בדיקת אבטחה בסיסית
+        if (!ADMIN_PASSWORD.equals(password)) {
+            return "גישה נדחתה: סיסמה שגויה!";
+        }
+
+        try {
+            // 1. איפוס הדאטה בייס (מחיקת כל הרשומות הקיימות)
+            // שים לב לסדר המחיקה אם יש קשרי גומלין (Foreign Keys)
+            tasteGuessRepository.deleteAll();
+            solutionRepository.deleteAll();
+            songRepository.deleteAll();
+
+            // 2. הזנת הנתונים מחדש (הלוגיקה מה-init)
+            LocalDateTime now = LocalDateTime.now().minusMinutes(7);
+
+            TasteGuess tasteGuess = new TasteGuess(1L, "קבלי", now);
+            tasteGuessRepository.save(tasteGuess);
+
+            Solution solution = new Solution(1L, "1234", false);
+            solutionRepository.save(solution);
+
+            songRepository.save(new Song("שיר ראשון", false));
+            songRepository.save(new Song("שיר שני", false));
+            songRepository.save(new Song("שיר שלישי", false));
+            songRepository.save(new Song("שיר רביעי", false));
+
+            return "הדאטה בייס אותחל בהצלחה!";
+
+        } catch (Exception e) {
+            return "שגיאה במהלך האיפול: " + e.getMessage();
+        }
     }
 
 
