@@ -1,5 +1,6 @@
 package com.example.mom_birthday_site.controller;
 
+import com.example.mom_birthday_site.DTO.GuessRequest;
 import com.example.mom_birthday_site.entity.Solution;
 import com.example.mom_birthday_site.entity.Song;
 import com.example.mom_birthday_site.entity.TasteGuess;
@@ -13,8 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.List;
-
-@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:5173", "http://localhost:3001", "https://happy-birthday-qj6e.onrender.com/"})
+@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:5173", "http://localhost:3001", "https://happy-birthday-qj6e.onrender.com/","https://mom-birthday-song.onrender.com/"})
 @RestController
 @RequestMapping("/api")
 public class MainController {
@@ -27,16 +27,15 @@ public class MainController {
     @PostConstruct
     public void init() {
         LocalDateTime now = LocalDateTime.now().minusMinutes(7);
-        TasteGuess tasteGuess = new TasteGuess(1L,"קבלי", now);
+        TasteGuess tasteGuess = new TasteGuess(1L, "קבלי", now);
         tasteGuessRepository.save(tasteGuess);
-        Solution solution = new Solution(1L, "1234", false);
+        Solution solution = new Solution(1L, "546", false);
         solutionRepository.save(solution);
 
-        // הוספת 4 השירים ל-DB
-        songRepository.save(new Song("שיר ראשון", false));
-        songRepository.save(new Song("שיר שני", false));
-        songRepository.save(new Song("שיר שלישי", false));
-        songRepository.save(new Song("שיר רביעי", false));
+        // הוספת 3 השירים ל-DB
+        songRepository.save(new Song("גוףונשמה", false));
+        songRepository.save(new Song("תןליתפילה", false));
+        songRepository.save(new Song("ואניתפילה", false));
 
         System.out.println(" מוכן לעבודה!");
     }
@@ -56,42 +55,37 @@ public class MainController {
 
         try {
             // 1. איפוס הדאטה בייס (מחיקת כל הרשומות הקיימות)
-            // שים לב לסדר המחיקה אם יש קשרי גומלין (Foreign Keys)
             tasteGuessRepository.deleteAll();
             solutionRepository.deleteAll();
             songRepository.deleteAll();
 
-            // 2. הזנת הנתונים מחדש (הלוגיקה מה-init)
+            // 2. הזנת הנתונים מחדש
             LocalDateTime now = LocalDateTime.now().minusMinutes(7);
 
             TasteGuess tasteGuess = new TasteGuess(1L, "קבלי", now);
             tasteGuessRepository.save(tasteGuess);
 
-            Solution solution = new Solution(1L, "1234", false);
+            Solution solution = new Solution(1L, "546", false);
             solutionRepository.save(solution);
 
-            songRepository.save(new Song("שיר ראשון", false));
-            songRepository.save(new Song("שיר שני", false));
-            songRepository.save(new Song("שיר שלישי", false));
-            songRepository.save(new Song("שיר רביעי", false));
+            songRepository.save(new Song("גוףונשמה", false));
+            songRepository.save(new Song("תןליתפילה", false));
+            songRepository.save(new Song("ואניתפילה", false));
 
             return "הדאטה בייס אותחל בהצלחה!";
 
         } catch (Exception e) {
-            return "שגיאה במהלך האיפול: " + e.getMessage();
+            return "שגיאה במהלך האיפוס: " + e.getMessage();
         }
     }
 
-
     @GetMapping("/ping")
     public String ping() {
-            return "OK";
+        return "OK";
     }
 
-
     @PatchMapping("/guess/{guess}")
-    public ResponseEntity<TasteGuessResponse> sendGuess(@PathVariable String guess){
-
+    public ResponseEntity<TasteGuessResponse> sendGuess(@PathVariable String guess) {
         TasteGuess dbGuess = tasteGuessRepository.findById(1L)
                 .orElseThrow(() -> new RuntimeException("Record not found"));
 
@@ -101,14 +95,14 @@ public class MainController {
         if (lastGuessTime != null && lastGuessTime.plusMinutes(5).isAfter(now)) {
             long secondsLeft = java.time.Duration.between(now, lastGuessTime.plusMinutes(5)).getSeconds();
             return ResponseEntity.ok().body(new TasteGuessResponse(secondsLeft, "U HAVE TO WAIT 5 MINUTES BETWEEN EVERY GUESS"));
-        }else {
-            if(dbGuess.getGuess().equalsIgnoreCase(guess.trim())) {
-                return ResponseEntity.ok().body(new TasteGuessResponse("1234", "CONGRATS!! UR GUESS IS RIGHT."));
-            }else{
+        } else {
+            if (dbGuess.getGuess().equalsIgnoreCase(guess.trim().replace('כ', 'ק'))) {
+                return ResponseEntity.ok().body(new TasteGuessResponse("601", "CONGRATS!! UR GUESS IS RIGHT."));
+            } else {
                 dbGuess.setLastGuessTime(now);
                 tasteGuessRepository.save(dbGuess);
                 LocalDateTime updatedTime = LocalDateTime.now();
-                long secondsLeft = java.time.Duration.between(updatedTime,now.plusMinutes(5)).getSeconds();
+                long secondsLeft = java.time.Duration.between(updatedTime, now.plusMinutes(5)).getSeconds();
                 return ResponseEntity.ok().body(new TasteGuessResponse(secondsLeft, "BAD GUESS. WAIT 5 MINUTES BEFORE THE NEXT ONE"));
             }
         }
@@ -121,7 +115,7 @@ public class MainController {
 
         if (dbSolution.isUsed()) {
             return ResponseEntity.ok().body(new TasteGuessResponse("BONUS ALREADY USED."));
-        }else {
+        } else {
             if (solution != null && dbSolution.getSiteSolution().equalsIgnoreCase(solution.trim())) {
                 TasteGuess dbGuess = tasteGuessRepository.findById(1L)
                         .orElseThrow(() -> new RuntimeException("Record not found"));
@@ -134,6 +128,7 @@ public class MainController {
             } else return ResponseEntity.ok().body(new TasteGuessResponse("BAD SOLUTION. TRY AGAIN."));
         }
     }
+
     @GetMapping("/timeCheck")
     public ResponseEntity<TasteGuessResponse> checkTheTime() {
         TasteGuess dbGuess = tasteGuessRepository.findById(1L)
@@ -143,22 +138,26 @@ public class MainController {
         boolean allowed = false;
         long secondsLeft = 100000;
 
-        if(now.isAfter(dbGuess.getLastGuessTime().plusMinutes(5))) {
+        if (now.isAfter(dbGuess.getLastGuessTime().plusMinutes(5))) {
             allowed = true;
             secondsLeft = 0;
         } else {
-             secondsLeft = java.time.Duration.between(now, dbLastGuess.plusMinutes(5)).getSeconds();
+            secondsLeft = java.time.Duration.between(now, dbLastGuess.plusMinutes(5)).getSeconds();
         }
         return ResponseEntity.ok().body(new TasteGuessResponse(allowed, secondsLeft));
     }
 
+    @PatchMapping("/song")
+    public ResponseEntity<SongGuessResponse> guessSong(@RequestBody GuessRequest request) {
+        String songName = request.getGuess();
 
-
-    // הנתיב החדש בדיוק בפלואו ובמבנה שביקשת
-    @PatchMapping("/song/{songName}")
-    public ResponseEntity<SongGuessResponse> guessSong(@PathVariable String songName) {
-        // שלב 1: שולף מה-DB את כל השירים שעדיין לא נקראו/נמצאו
+        // שלב 1: שולף מה-DB את כל השירים שעדיין לא נמצאו
         List<Song> unreadSongs = songRepository.findByIsFoundFalse();
+        System.out.println(songName);
+        System.out.println(unreadSongs.size());
+        for (Song song : unreadSongs) {
+            System.out.println(song.getSongName());
+        }
 
         // אם המערך ריק, זה אומר שכל השירים כבר נמצאו קודם לכן
         if (unreadSongs.isEmpty()) {
@@ -183,25 +182,34 @@ public class MainController {
         matchedSong.setFound(true);
         songRepository.save(matchedSong);
 
-        // בודקים כמה שירים זוהו בסך הכל עד עכשיו
+        // בודקים כמה שירים זוהו בסך הכל עד עכשיו ישירות מה-DB
         long totalFoundCount = songRepository.countByIsFoundTrue();
 
-        // שלב 5: אם המערך של אלו שלא נקראו עכשיו יתרוקן (כלומר מצאנו 4 שירים)
-        if (totalFoundCount == 4) {
+        // שלב 5: אם מצאנו את כל 3 השירים
+        if (totalFoundCount == 3) {
             return ResponseEntity.ok().body(new SongGuessResponse(
                     true,
-                    "AMAZING! YOU FOUND ALL 4 SONGS.",
+                    "AMAZING! YOU FOUND ALL 3 SONGS.",
                     totalFoundCount,
-                    "1234" // הקוד הסודי שביקשת
+                    "975" // הקוד הסודי
             ));
         }
 
-        // אם נמצא שיר אבל עדיין לא הגיעו ל-4
+        // אם נמצא שיר אבל עדיין לא הגיעו ל-3
         return ResponseEntity.ok().body(new SongGuessResponse(
                 true,
                 "GREAT GUESS! SONG FOUND.",
                 totalFoundCount
         ));
+    }
+
+    @GetMapping("/songs-left")
+    public ResponseEntity<Integer> getSongsLeft() {
+        // אנחנו משתמשים במתודה שקיימת בטוח ומחסירים מ-3
+        int foundCount = (int) songRepository.countByIsFoundTrue();
+        int unreadCount = 3 - foundCount;
+
+        return ResponseEntity.ok(unreadCount);
     }
 }
 /*
